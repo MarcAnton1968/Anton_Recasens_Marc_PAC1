@@ -1,0 +1,59 @@
+---
+title: "Anàlisi de dades òmiques (M0-157). PAC1."
+author: "Marc Anton"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introducció
+
+Aquest arxiu conté les sol·lucions als problemes plantejats en la PAC1 *Anàlisi de dades òmiques (M0-157)*. El projecte total del treball es pot consultar al: meu repositori github, cliqueu **[aquí](https://github.com/MarcAnton1968/Anton_Recasens_Marc_PAC1/tree/master)**
+
+A continuació, procedeixo a resoldre la PAC. Abans que res, carreguem les dades al nostre entorn de treball. Treballarem amb l'exemple de mostra, veure **[aquí](https://github.com/nutrimetabolomics/metaboData/tree/main/Datasets/2018-MetabotypingPaper)**. Carreguem els dos fitxers:
+
+```{r}
+DataInfo_S013 <- read.csv("DataInfo_S013.csv", sep = ",")
+DataValues_S013 <- read.csv("DataValues_S013.csv", sep = ",")
+```
+
+Com que ja sabem que aquests fitxers solen portar molts camps, mirem primer l'estructura dels dos.
+
+```{r}
+dim(DataInfo_S013)
+dim(DataValues_S013)
+```
+
+Aqui ja veiem que en l'arxiu Values tenim 696 columnes, el que correspon a un index únic de cada cas d'estudi més les 695 variables que es tenen de cada un d'ells. Per veure que hi ha, mirem les 20 primeres files d'Info i podem fer-nos una idea
+
+```{r}
+head(DataInfo_S013,20)
+```
+
+Aqui ja veiem que hi ha 9 primers camps que semblen ser els que tenen la informació sobre el pacient mostra. Mirem que contenen aquests camps a values:
+
+```{r}
+# En mirem 10 en realitat, per comprovar que la primera columna és un index
+head(DataValues_S013[,1:10])
+```
+
+Com suposavem, aquestes columnes corresponen a:
+1. Un codi de pacient (que està repetit a les dues primeres columnes)
+2. La cirugia a la que va ser sotmés el pacient
+3. L'edat i el gènere
+4. Un grup de tractament
+5. 4 tractaments que venen amb 0 i 1
+
+Per veure que la resta són metabolits, mirem 5 columnes més
+
+```{r}
+head(DataValues_S013[,11:15],10)
+```
+
+Obviament ja ho veiem i també podem veure que hi ha més d'un valor que no es té (NA)
+
