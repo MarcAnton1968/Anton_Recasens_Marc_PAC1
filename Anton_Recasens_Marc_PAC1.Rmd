@@ -2,20 +2,15 @@
 title: "Anàlisi de dades òmiques (M0-157). PAC1."
 author: "Marc Anton"
 date: "`r Sys.Date()`"
-<<<<<<< HEAD
 output:
-  html_document: default
   pdf_document: default
-=======
-output: html_document
->>>>>>> 447d504681d463a20e0a853351993de04b8123a5
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-<<<<<<< HEAD
 # Introducció
 
 Aquest arxiu conté les sol·lucions als problemes plantejats en la PAC1 *Anàlisi de dades òmiques (M0-157)*. El projecte total del treball es pot consultar al: meu repositori github, cliqueu **[aquí](https://github.com/MarcAnton1968/Anton_Recasens_Marc_PAC1/tree/master)**
@@ -62,24 +57,3 @@ head(DataValues_S013[,11:15],10)
 
 Obviament ja ho veiem i també podem veure que hi ha més d'un valor que no es té (NA)
 
-=======
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
->>>>>>> 447d504681d463a20e0a853351993de04b8123a5
