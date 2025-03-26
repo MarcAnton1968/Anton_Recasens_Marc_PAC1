@@ -11,9 +11,11 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Introducció
+# 1. Introducció
 
 Aquest arxiu conté les sol·lucions als problemes plantejats en la PAC1 *Anàlisi de dades òmiques (M0-157)*. El projecte total del treball es pot consultar al: meu repositori github, cliqueu **[aquí](https://github.com/MarcAnton1968/Anton_Recasens_Marc_PAC1/tree/master)**
+
+# 2. Carrega de dades
 
 A continuació, procedeixo a resoldre la PAC. Abans que res, carreguem les dades al nostre entorn de treball. Treballarem amb l'exemple de mostra, veure **[aquí](https://github.com/nutrimetabolomics/metaboData/tree/main/Datasets/2018-MetabotypingPaper)**. Carreguem els dos fitxers:
 
@@ -23,6 +25,8 @@ DataValues_S013 <- read.csv("DataValues_S013.csv", sep = ",")
 ```
 
 Com que ja sabem que aquests fitxers solen portar molts camps, mirem primer l'estructura dels dos.
+
+# 3. Eploració previa de les dades descarregades
 
 ```{r}
 dim(DataInfo_S013)
@@ -56,4 +60,39 @@ head(DataValues_S013[,11:15],10)
 ```
 
 Obviament ja ho veiem i també podem veure que hi ha més d'un valor que no es té (NA)
+
+# Generació de l'obsject SummarizedExperiment
+
+Ara que ja sabem que tenim a les dades, podem procedir a carregar-les en un objecte *SummarizedExperiment*. Per a fer-ho, convertirem però les dades a un data frame i li traurem la primera columna que ja hem vist que és redundant amb la segona. Aleshores ja ho podem carregar. En concret, carregarem:
+
+1. L'arxiu DataVAlues com a assays que és on es guarden les dades de les mostres que tenim
+2. L'arxiu DataInfo com a colData que és on es guarda la informació de com és cada columna d'assays.
+
+```{r}
+# Primer carreguem la llibreria per poder tractar el SummarizedExperiment
+library(SummarizedExperiment)
+# Primer eliminem la primera columna de DataValues i ho guardem com un data frame que és el que accepta SummarizedExperiment
+DataValues_S013_matrix <- DataValues_S013[,-1]
+# Ara ja podem carregar el SummarizedExperiment
+seMA <- SummarizedExperiment(assays = list(counts = DataValues_S013_matrix),
+                             colData = DataInfo_S013)
+seMA
+```
+
+Sembla que l'objecte s'ha generat correctament
+
+Mirem un parell de funcions que es poden fer. 
+
+```{r}
+# Comprovem com es diuen les columnes que tenim en cada una de les classes de dins de l'objecte
+dimnames(seMA)
+# I ara mirem les 10 primeres columnes i les 5 primeres files d'assays
+assay(seMA)[1:5, 1:10]
+# I també mirem com ha quedat colData
+colData(seMA)
+```
+
+
+
+
 
