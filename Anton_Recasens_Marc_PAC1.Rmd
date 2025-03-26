@@ -3,8 +3,8 @@ title: "Anàlisi de dades òmiques (M0-157). PAC1."
 author: "Marc Anton"
 date: "`r Sys.Date()`"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -61,7 +61,7 @@ head(DataValues_S013[,11:15],10)
 
 Obviament ja ho veiem i també podem veure que hi ha més d'un valor que no es té (NA)
 
-# Generació de l'obsject SummarizedExperiment
+# 4. Generació de l'obsject SummarizedExperiment
 
 Ara que ja sabem que tenim a les dades, podem procedir a carregar-les en un objecte *SummarizedExperiment*. Per a fer-ho, convertirem però les dades a un data frame i li traurem la primera columna que ja hem vist que és redundant amb la segona. Aleshores ja ho podem carregar. En concret, carregarem:
 
@@ -92,7 +92,94 @@ assay(seMA)[1:5, 1:10]
 colData(seMA)
 ```
 
+# 5. Anàlisi exploratoria de les dades
+
+Com que el joc de dades que hé triat conté 395 camps i es fa molt dificil fer un anàlisi complet, provem a fer una cosa una  mica més ajustada i agafaré només les dades de descripció del casos analitzats i alguns metabolits. En concret em pararé en el ferro. és a dir que agafaré les primeres 40 columnes. En un context real s'hauria de fer amb tot i l'anàlisi seria molt llarg i tediós. 
+
+Per tant, comencem per fer un subset del nostre SummarizedExperiment i el guardem com un data frame per poder treballar amb ell.
+
+```{r}
+analisi <- seMA[,1:40]
+analisi
+```
+
+Ara, per tant, tenim un segon SummarizedExperiment que és un subset del primer. Conté nomnés les dades d'identificació de tots els pacients (columnes 1-9) i els primers 31 metabolits que es van recollir
+
+## 5.1. Estadistics bàsics
+
+Amb aixó, podem mirar una mica el que tenim
+
+```{r}
+str(assay(analisi))
+summary(assay(analisi))
+```
+
+Ja només amb aquesta primera mirada, podem comprovar que les dades tenen una enorme variabilitat de rangs el que pot portar algun problema a l'hora de fer anàlisi més adelantats i que calgui escalar les variables en alguns casos
+
+## 5.2. Analisi univariant
+
+Ho fem amb histogrames. Farem 9 de les variables per veure una mica com es distribueixen
+
+```{r}
+opt <- par(mfrow=c(3,3))
+for (i in 12:20)
+  hist(assay(analisi)[,i], xlab = colData(analisi)[i,2], main = colData(analisi)[i,2])
+par(opt)
+```
 
 
+## 5.3. Analisi de correlacions
+
+Ho fariem amb plot. Un exemple
+
+```{r}
+# Mirem per  exemple, si l'edat es correlaciona be amb alguns
+plot(assay(analisi)[,c(3,11:15)])
+```
+
+Una altra opció pot ser un heatmap de la matriu de correlacions que permetria veure totes les relacions 
+
+
+```{r}
+cor_matrix <- cor(na.omit(assay(analisi)[,c(3,12:40)]))
+heatmap(cor_matrix)
+```
+
+Un altre heatmap que calcula distancies
+
+```{r}
+dist_matrix <- t(assay(analisi)[,c(3,12:40)])
+heatmap(dist_matrix, col=heat.colors(16))
+```
+
+
+
+# 5.4. Components principals
+
+Primer hem d'eliminar els NA i despres  podem. Cal fer-ho amb les columnes de metabolits (11-40)
+
+```{r}
+PCAMA <- prcomp(na.omit(assay(analisi)[,c(3,12:40)]), scale. = TRUE)
+PCAMA
+summary(PCAMA)
+```
+
+Les dues primeres components expliquen el 74% de la variancia i les 3 primres, el 93%. Grafiquem les dues primeres
+
+```{r}
+loads <- round(PCAMA$sdev^2/sum(PCAMA$sdev^2)*100,1)
+groupColors <- c(rep("red", 4), rep("blue", 4))
+xlab <- c(paste("PC1",loads[1],"%"))
+ylab <- c(paste("PC2",loads[2],"%"))
+plot(PCAMA$x[,1:2],
+     xlab=xlab,
+     ylab=ylab, 
+     col=groupColors, 
+     main ="Principal components (PCA)")
+filesSenseNA <- complete.cases(assay(analisi)[,c(3,12:40)]) 
+names2plot <- which(filesSenseNA) 
+
+text(PCAMA$x[,1],PCAMA$x[,2],names2plot, pos=3, cex=.6)
+```
 
 
