@@ -150,6 +150,8 @@ normalized <- seMA %>%
   PomaNorm(method = "log_pareto")
 ```
 
+
+
 ## 5.2. Analisi univariant
 
 Ho fem amb histogrames. Farem 9 de les variables per veure una mica com es distribueixen
