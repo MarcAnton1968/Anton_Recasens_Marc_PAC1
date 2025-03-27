@@ -13,18 +13,18 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # 1. Introducció
 
-Aquest arxiu conté les sol·lucions als problemes plantejats en la PAC1 *Anàlisi de dades òmiques (M0-157)*. El projecte total del treball es pot consultar al: meu repositori github, cliqueu **[aquí](https://github.com/MarcAnton1968/Anton_Recasens_Marc_PAC1/tree/master)**
+Aquest arxiu conté les sol·lucions analítiques als problemes plantejats en la PAC1 *Anàlisi de dades òmiques (M0-157)*. El projecte total del treball es pot consultar al: meu repositori github, cliqueu **[aquí](https://github.com/MarcAnton1968/Anton_Recasens_Marc_PAC1/tree/master)**
 
 # 2. Carrega de dades
 
-A continuació, procedeixo a resoldre la PAC. Abans que res, carreguem les dades al nostre entorn de treball. Treballarem amb l'exemple de mostra, veure **[aquí](https://github.com/nutrimetabolomics/metaboData/tree/main/Datasets/2018-MetabotypingPaper)**. Carreguem els dos fitxers:
+Abans que res, carreguem les dades al nostre entorn de treball. Treballarem amb un dels exemples de mostra, veure **[aquí](https://github.com/nutrimetabolomics/metaboData/tree/main/Datasets/2018-MetabotypingPaper)**. Aquest exemple porta dos arxius, DataInfo_S013 i DataValues_S013. Carreguem els dos fitxers:
 
 ```{r}
 DataInfo_S013 <- read.csv("DataInfo_S013.csv", sep = ",")
 DataValues_S013 <- read.csv("DataValues_S013.csv", sep = ",")
 ```
 
-Com que ja sabem que aquests fitxers solen portar molts camps, mirem primer l'estructura dels dos.
+Com és habitual amb dades òmiques, tenim moltes varibales i un nombre reduït de casos d'estudi. Tot i així, abans que res mirem l'estructura dels dos.
 
 # 3. Eploració previa de les dades descarregades
 
@@ -33,13 +33,15 @@ dim(DataInfo_S013)
 dim(DataValues_S013)
 ```
 
-Aqui ja veiem que en l'arxiu Values tenim 696 columnes, el que correspon a un index únic de cada cas d'estudi més les 695 variables que es tenen de cada un d'ells. Per veure que hi ha, mirem les 20 primeres files d'Info i podem fer-nos una idea
+Aqui ja veiem que en l'arxiu Info hi ha 695 files que han de correspondre a les variables que hi ha a Values. En aquest darrer tenim 696 columnes i 39 files. Les files corresponen a cada cas d'estudi més les 695 columnes són les variables que es tenen de cada un d'ells.
+
+Per veure què són les variables, mirem les 20 primeres files d'Info i podem fer-nos una idea.
 
 ```{r}
 head(DataInfo_S013,20)
 ```
 
-Aqui ja veiem que hi ha 9 primers camps que semblen ser els que tenen la informació sobre el pacient mostra. Mirem que contenen aquests camps a values:
+Aqui ja veiem que hi ha 9 primers camps que semblen ser els que tenen la informació sobre el pacient de cada mostra. Mirem que contenen aquests camps a values:
 
 ```{r}
 # En mirem 10 en realitat, per comprovar que la primera columna és un index
@@ -47,19 +49,25 @@ head(DataValues_S013[,1:10])
 ```
 
 Com suposavem, aquestes columnes corresponen a:
-1. Un codi de pacient (que està repetit a les dues primeres columnes)
+1. Un codi de pacient (que està repetit a les dues primeres columnes, d'aquí que hi hagi una fila més a Info que columnes a Values)
 2. La cirugia a la que va ser sotmés el pacient
 3. L'edat i el gènere
 4. Un grup de tractament
 5. 4 tractaments que venen amb 0 i 1
 
-Per veure que la resta són metabolits, mirem 5 columnes més
+Per veure que la resta són variables metabòliques, mirem 10 columnes més
 
 ```{r}
-head(DataValues_S013[,11:15],10)
+head(DataValues_S013[,11:20],10)
 ```
 
-Obviament ja ho veiem i també podem veure que hi ha més d'un valor que no es té (NA)
+Obviament ja ho veiem i també podem veure que hi ha més d'un valor que no es té per a alguna de les variables (NA). Anem a veure si n'hi ha molts
+
+```{r}
+sum(is.na(DataValues_S013))/(dim(DataValues_S013)[1]*dim(DataValues_S013)[2])
+```
+
+Això apunta a que tenim un 12,5% de valors desconeguts. Aquest és un aspecte que caldrà tenir en compte en els anàlisi posteriors
 
 # 4. Generació de l'obsject SummarizedExperiment
 
@@ -92,29 +100,55 @@ assay(seMA)[1:5, 1:10]
 colData(seMA)
 ```
 
-# 5. Anàlisi exploratoria de les dades
+# 5. Anàlisi exploratoria inicial de les dades
 
-Com que el joc de dades que hé triat conté 395 camps i es fa molt dificil fer un anàlisi complet, provem a fer una cosa una  mica més ajustada i agafaré només les dades de descripció del casos analitzats i alguns metabolits. En concret em pararé en el ferro. és a dir que agafaré les primeres 40 columnes. En un context real s'hauria de fer amb tot i l'anàlisi seria molt llarg i tediós. 
+## 5.1. Descripció de les dades
 
-Per tant, comencem per fer un subset del nostre SummarizedExperiment i el guardem com un data frame per poder treballar amb ell.
+Fins ara hem vist que les nostres dades tenen NA, el que pot suposar un problema. Anem a veure també si la variabilitat de rangs és molt gran´i ens cal normalitzar les dades
 
-```{r}
-analisi <- seMA[,1:40]
-analisi
-```
-
-Ara, per tant, tenim un segon SummarizedExperiment que és un subset del primer. Conté nomnés les dades d'identificació de tots els pacients (columnes 1-9) i els primers 31 metabolits que es van recollir
-
-## 5.1. Estadistics bàsics
-
-Amb aixó, podem mirar una mica el que tenim
 
 ```{r}
-str(assay(analisi))
-summary(assay(analisi))
+str(assay(seMA))
 ```
 
-Ja només amb aquesta primera mirada, podem comprovar que les dades tenen una enorme variabilitat de rangs el que pot portar algun problema a l'hora de fer anàlisi més adelantats i que calgui escalar les variables en alguns casos
+Efectivament, podem comprovar que les dades tenen un ample marge de rangs. Fem un summary a més per veure com varien els estadístics bàsics. Si ho fem amb tot l'arxiu no s'arriba a apreciar la sortida, així que en fem uns quants
+
+```{r}
+summary(assay(seMA)[,1:150])
+```
+
+## 5.2. Preprocessat
+
+Aqui ja en tenim prou per veure el mateix. Per tant, ens calen dos procesos per poder començar els anàlisi multivariants:
+
+1. Imputar els missing values 
+2. Normalitzar les dades
+
+Això ho podem fer amb POMA que al mateix temps ens permet fer algun boxplot
+
+```{r}
+# primer instal·lem el paquet i les llibreries
+# BiocManager::install("POMA") # Això només el primer cop per instal·lar el paquet
+library(POMA)
+library(ggtext)
+library(magrittr)
+```
+Ataquem primer la imputació
+
+```{r}
+imputed <- sep %>% 
+  PomaImpute(method = "knn", zeros_as_na = TRUE, remove_na = FALSE, cutoff = 20)
+```
+
+```{r}
+for (i in 1:695)
+  if (sum(is.na(assay(seMA)[,i])) > 31)
+  {print((paste(i, sum(is.na(assay(seMA)[,i])))))}
+```
+```{r}
+normalized <- seMA %>% 
+  PomaNorm(method = "log_pareto")
+```
 
 ## 5.2. Analisi univariant
 
@@ -127,8 +161,11 @@ for (i in 12:20)
 par(opt)
 ```
 
+--- NOTA: Fer algun boxplot
 
 ## 5.3. Analisi de correlacions
+
+NOTA --- Potser de distancies???
 
 Ho fariem amb plot. Un exemple
 
@@ -141,7 +178,7 @@ Una altra opció pot ser un heatmap de la matriu de correlacions que permetria v
 
 
 ```{r}
-cor_matrix <- cor(na.omit(assay(analisi)[,c(3,12:40)]))
+cor_matrix <- cor(na.omit(assay(seMA)[,c(3,12:40)]))
 heatmap(cor_matrix)
 ```
 
