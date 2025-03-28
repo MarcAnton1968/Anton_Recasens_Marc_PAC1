@@ -121,11 +121,9 @@ summary(assay(seMA)[,1:150])
 
 Veiem que la variabilitat en els rangs és molt elevada i, per tant, caldrà normalitzar les dades. Recordem també que tenim un nombre de NAs força elevat.
 
-ANEM PER AQUI
-
 ## 5.2. Preprocessat
 
-Aqui ja en tenim prou per veure el mateix. Per tant, ens calen dos procesos per poder començar els anàlisi multivariants:
+Amb el que hem pogut veure fins aquó de les dades que tenim és que ens calen dos procesos per poder començar els anàlisi multivariants:
 
 1. Imputar els missing values 
 2. Normalitzar les dades
@@ -139,68 +137,77 @@ library(POMA)
 library(ggtext)
 library(magrittr)
 ```
-Ataquem primer la imputació
+Ataquem primer la imputació.
+
+Abans de fer-la cal dir que no podem imputar NA en columnes on no tenim cap valor. Per tant, mirem si hi ha alguna columna que no tingui cap valor i l'eliminem. 
 
 ```{r}
-imputed <- sep1 %>% 
-  PomaImpute(method = "mean", zeros_as_na = TRUE, remove_na = TRUE, cutoff = 20)
+# Busquem columnes amb tot NAs
+eliminats = c()
+for (i in 1:685)
+  if (sum(is.na(assay(seMA)[,i])) == 39)
+  {print((paste(i, sum(is.na(assay(seMA)[,i])))))
+    eliminats = c(eliminats, i)}
+```
+
+Eliminem per tant, la columna 248
+
+```{r}
+seMAclean <- seMA[,-eliminats]
+```
+
+I fem la imputació dels NA utilitzant el knn que és possiblement el mètode més robust per fer-ho
+
+```{r}
+seMAimputed <- seMAclean %>%
+  PomaImpute(method = "knn", zeros_as_na = FALSE, remove_na = FALSE, cutoff = 20)
+```
+
+Després comprovem que no tenim NAs
+
+```{r}
+sum(is.na(assay(seMAimputed)))
+```
+
+Doncs ara, ha podem normalitzar les dades. D'entre els mètodes que es poden utilitzar hem rebutjat els logaritmes perquè amb les dades que tenim ens generen NAs, ek mix_max perquè genera molta variabilitat en les dades en el nostre cas i el box_cox perquè no funciona amb la matriu que tenim.
+
+Ens queden els dos mètodes d'escalat i el auto_scaling és el que dona el gràfic més homogeni. Així que ens quedem amb aquest
+
+```{r}
+# Ensenyem el resultat de min_max per veure que les funcions de densitat són molt variables
+seMAnormalized <- seMAimputed %>% 
+  PomaNorm(method = "min_max")
+PomaDensity(seMAnormalized, x = "features")
 ```
 
 ```{r}
-for (i in 1:684)
-  if (sum(is.na(assay(sep1)[,i])) > 25)
-  {print((paste(i, sum(is.na(assay(sep1)[,i])))))}
+# Ensenyem el resultat de min_max per veure que les funcions de densitat són molt variables
+seMAnormalized <- seMAimputed %>% 
+  PomaNorm(method = "auto_scaling")
+PomaDensity(seMAnormalized, x = "features")
 ```
 
-sda
+Sembla que hi ha algun outlier, però crec que no és preocupant
 
+## 5.4. Analisi univariant
 
-```{r}
-normalized <- seMA %>% 
-  PomaNorm(method = "log_pareto")
-```
-
-
-
-## 5.2. Analisi univariant
-
-Ho fem amb histogrames. Farem 9 de les variables per veure una mica com es distribueixen
+L'anàlisi univariant no té massa sentit amb una matriu tant gran de dades, però per provar alguna cosa, podem dir que fer alguns histogrames no està de mas. Farem 9 de les variables per veure una mica com es distribueixen després del preprocessament
 
 ```{r}
 opt <- par(mfrow=c(3,3))
-for (i in 12:20)
-  hist(assay(analisi)[,i], xlab = colData(analisi)[i,2], main = colData(analisi)[i,2])
+for (i in 1:9)
+  hist(assay(seMAnormalized)[,i], 
+       xlab = colData(seMAnormalized)[i,2], 
+       main = colData(seMAnormalized)[i,2])
 par(opt)
 ```
 
---- NOTA: Fer algun boxplot
-
-## 5.3. Analisi de correlacions
-
-NOTA --- Potser de distancies???
-
-Ho fariem amb plot. Un exemple
-
-```{r}
-# Mirem per  exemple, si l'edat es correlaciona be amb alguns
-plot(assay(analisi)[,c(3,11:15)])
-```
-
-Una altra opció pot ser un heatmap de la matriu de correlacions que permetria veure totes les relacions 
+Podem apreciar que les distribucions no són molt homogenies, el que potser implica poques correlacions. Veurem més endavant
 
 
-```{r}
-cor_matrix <- cor(na.omit(assay(seMA)[,c(3,12:40)]))
-heatmap(cor_matrix)
-```
+ANEM PER AQUI
 
-Un altre heatmap que calcula distancies
-
-```{r}
-dist_matrix <- t(assay(analisi)[,c(3,12:40)])
-heatmap(dist_matrix, col=heat.colors(16))
-```
-
+# 6. Reducció de les dimensions
 
 
 # 5.4. Components principals
@@ -229,6 +236,29 @@ filesSenseNA <- complete.cases(assay(analisi)[,c(3,12:40)])
 names2plot <- which(filesSenseNA) 
 
 text(PCAMA$x[,1],PCAMA$x[,2],names2plot, pos=3, cex=.6)
+```
+
+
+
+
+
+## 7. Cerca de patrons
+
+NOTA --- Potser de distancies???
+
+Ho farem amb un heatmap de la matriu de correlacions que permetria veure totes les relacions 
+
+
+```{r}
+cor_matrix <- cor(na.omit(assay(seMA)[,c(3,12:40)]))
+heatmap(cor_matrix)
+```
+
+Un altre heatmap que calcula distancies
+
+```{r}
+dist_matrix <- t(assay(analisi)[,c(3,12:40)])
+heatmap(dist_matrix, col=heat.colors(16))
 ```
 
 
