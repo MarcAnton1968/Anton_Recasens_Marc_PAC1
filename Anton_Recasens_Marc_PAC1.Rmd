@@ -3,8 +3,8 @@ title: "Anàlisi de dades òmiques (M0-157). PAC1."
 author: "Marc Anton"
 date: "`r Sys.Date()`"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -204,61 +204,70 @@ par(opt)
 
 Podem apreciar que les distribucions no són molt homogenies, el que potser implica poques correlacions. Veurem més endavant
 
-
-ANEM PER AQUI
-
 # 6. Reducció de les dimensions
 
-
-# 5.4. Components principals
-
-Primer hem d'eliminar els NA i despres  podem. Cal fer-ho amb les columnes de metabolits (11-40)
+Un pas important ara que hem vist com són les variables pot ser fer un Anàlisi de Components Principals (PCA)). Com que tenim els NAs eliminats i les dades normalitzades, podem fer-lo sense problemes addicionals.
 
 ```{r}
-PCAMA <- prcomp(na.omit(assay(analisi)[,c(3,12:40)]), scale. = TRUE)
-PCAMA
-summary(PCAMA)
+PCAseMA <- prcomp(assay(seMAnormalized), scale. = TRUE)
+PCAseMA
+summary(PCAseMA)
 ```
 
-Les dues primeres components expliquen el 74% de la variancia i les 3 primres, el 93%. Grafiquem les dues primeres
+L'anàlisi no és molt concloent. Per obtenir un 70% de la variancia ens calen 5 components, el que és molt. Entenc que hi ha massa variables en joc i segurament caldria reduir abans d'alguna altra manera. Segurament hi ha explicacions biològiques que estaria bé aplicar, però a mi se m'escapen ja que no comprenc totes les variables.
+
 
 ```{r}
-loads <- round(PCAMA$sdev^2/sum(PCAMA$sdev^2)*100,1)
+# carreguem les dades pel gràfic
+loads <- round(PCAseMA$sdev^2/sum(PCAseMA$sdev^2)*100,1)
 groupColors <- c(rep("red", 4), rep("blue", 4))
 xlab <- c(paste("PC1",loads[1],"%"))
 ylab <- c(paste("PC2",loads[2],"%"))
-plot(PCAMA$x[,1:2],
+# grafiquem
+plot(PCAseMA$x[,1:2],
      xlab=xlab,
      ylab=ylab, 
-     col=groupColors, 
-     main ="Principal components (PCA)")
-filesSenseNA <- complete.cases(assay(analisi)[,c(3,12:40)]) 
-names2plot <- which(filesSenseNA) 
-
-text(PCAMA$x[,1],PCAMA$x[,2],names2plot, pos=3, cex=.6)
+     pch = c(3,21),
+     col=c("blue","red"), 
+     main ="Principal components (PCA)",
+     ylim=c(-20,30))
+names <- rownames(PCAseMA$x)
+text(PCAseMA$x[,1],PCAseMA$x[,2],names, pos=3, cex=.6)
 ```
 
+Lo unic destacable que s'aprecia és que la mostra 37 està a molta distància de la resta
 
+```{r}
+library(plotly)
+fig <- plot_ly(as.data.frame(assay(seMAnormalized)), 
+               x = ~PCAseMA$x[,1], y = ~PCAseMA$x[,2], z = ~PCAseMA$x[,3]) %>%
+  add_markers(marker = list(size = 3)) %>%
+  layout(scene = list(xaxis = list(title = "PC1"),
+                      yaxis = list(title = "PC2"),
+                      zaxis = list(title = "PC3")))
+fig
+```
 
-
+Ara ja són 3 els casos que se separen força de la resta
 
 ## 7. Cerca de patrons
-
-NOTA --- Potser de distancies???
 
 Ho farem amb un heatmap de la matriu de correlacions que permetria veure totes les relacions 
 
 
 ```{r}
-cor_matrix <- cor(na.omit(assay(seMA)[,c(3,12:40)]))
+cor_matrix <- cor(na.omit(assay(seMAnormalized)))
 heatmap(cor_matrix)
 ```
 
-Un altre heatmap que calcula distancies
+Es veuen dos grups de variables més correlacionades, però en general les correlacions són debils.
+
+Ara fem un altre heatmap que calcula distancies entre les variables i les mostres
 
 ```{r}
-dist_matrix <- t(assay(analisi)[,c(3,12:40)])
+dist_matrix <- t(assay(seMAnormalized))
 heatmap(dist_matrix, col=heat.colors(16))
 ```
 
+Hi ha tantes mostres i variables que  no es poden veure be totes les relacions, però sembla que hi ha un patró clar de proximitat en les primeres variables del gràfic i algunes que estan a molta distància cap a baix. Pel que fa a les mostres, la 37 es mostra clarament diferent a la resta com ja s'havia vist a la PCA
 
