@@ -73,17 +73,22 @@ Això apunta a que tenim un 12,5% de valors desconeguts. Aquest és un aspecte q
 
 Ara que ja sabem que tenim a les dades, podem procedir a carregar-les en un objecte *SummarizedExperiment*. Per a fer-ho, convertirem però les dades a un data frame i li traurem la primera columna que ja hem vist que és redundant amb la segona. Aleshores ja ho podem carregar. En concret, carregarem:
 
-1. L'arxiu DataVAlues com a assays que és on es guarden les dades de les mostres que tenim
-2. L'arxiu DataInfo com a colData que és on es guarda la informació de com és cada columna d'assays.
+1. Les dades de les  9 primeres columnes (obviant la primera que esta duplicada) de DataVAlues corresponen a dades dels pacients que els guardarem com a rowData ja que no formen part de l'anàlisi dels metabolits
+2. La resta de dades de DataValues seràn els assays que és on es guarden les dades de les mostres que tenim
+2. L'arxiu DataInfo com a colData que és on es guarda la informació de com és cada columna d'assays. D'aquí només hem d'agafar la part corresponent als metabolits. És a dir de la fila 11 endavant.
 
 ```{r}
 # Primer carreguem la llibreria per poder tractar el SummarizedExperiment
 library(SummarizedExperiment)
-# Primer eliminem la primera columna de DataValues i ho guardem com un data frame que és el que accepta SummarizedExperiment
-DataValues_S013_matrix <- DataValues_S013[,-1]
+
+# Després generem les dades de pacients i de metabolits i la llista de rownames que volem tal i com hem indicat al text
+pacients <- DataValues_S013[,2:10]
+metabolits <- DataValues_S013[,11:696]
+colNames <- DataInfo_S013[10:695,]
 # Ara ja podem carregar el SummarizedExperiment
-seMA <- SummarizedExperiment(assays = list(counts = DataValues_S013_matrix),
-                             colData = DataInfo_S013)
+seMA <- SummarizedExperiment(assays = list(counts = as.matrix(metabolits)),
+                             colData = colNames,
+                             rowData = pacients)
 seMA
 ```
 
@@ -98,24 +103,25 @@ dimnames(seMA)
 assay(seMA)[1:5, 1:10]
 # I també mirem com ha quedat colData
 colData(seMA)
+# I les dades bàsiques dels pacients
+rowData(seMA)
+
 ```
+
 
 # 5. Anàlisi exploratoria inicial de les dades
 
 ## 5.1. Descripció de les dades
 
-Fins ara hem vist que les nostres dades tenen NA, el que pot suposar un problema. Anem a veure també si la variabilitat de rangs és molt gran´i ens cal normalitzar les dades
-
-
-```{r}
-str(assay(seMA))
-```
-
-Efectivament, podem comprovar que les dades tenen un ample marge de rangs. Fem un summary a més per veure com varien els estadístics bàsics. Si ho fem amb tot l'arxiu no s'arriba a apreciar la sortida, així que en fem uns quants
+Fins ara hem vist que les nostres dades tenen NA, el que pot suposar un problema. Anem a veure també si la variabilitat de rangs és molt gran´i ens cal normalitzar les dades. Fem un summary a més per veure com varien els estadístics bàsics. Si ho fem amb tot l'arxiu no s'arriba a apreciar la sortida, així que en fem uns quants
 
 ```{r}
 summary(assay(seMA)[,1:150])
 ```
+
+Veiem que la variabilitat en els rangs és molt elevada i, per tant, caldrà normalitzar les dades. Recordem també que tenim un nombre de NAs força elevat.
+
+ANEM PER AQUI
 
 ## 5.2. Preprocessat
 
@@ -136,15 +142,19 @@ library(magrittr)
 Ataquem primer la imputació
 
 ```{r}
-imputed <- sep %>% 
-  PomaImpute(method = "knn", zeros_as_na = TRUE, remove_na = FALSE, cutoff = 20)
+imputed <- sep1 %>% 
+  PomaImpute(method = "mean", zeros_as_na = TRUE, remove_na = TRUE, cutoff = 20)
 ```
 
 ```{r}
-for (i in 1:695)
-  if (sum(is.na(assay(seMA)[,i])) > 31)
-  {print((paste(i, sum(is.na(assay(seMA)[,i])))))}
+for (i in 1:684)
+  if (sum(is.na(assay(sep1)[,i])) > 25)
+  {print((paste(i, sum(is.na(assay(sep1)[,i])))))}
 ```
+
+sda
+
+
 ```{r}
 normalized <- seMA %>% 
   PomaNorm(method = "log_pareto")
