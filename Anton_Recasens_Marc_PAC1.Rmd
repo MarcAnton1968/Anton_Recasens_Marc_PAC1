@@ -206,16 +206,26 @@ Podem apreciar que les distribucions no són molt homogenies, el que potser impl
 
 # 6. Reducció de les dimensions
 
-Un pas important ara que hem vist com són les variables pot ser fer un Anàlisi de Components Principals (PCA)). Com que tenim els NAs eliminats i les dades normalitzades, podem fer-lo sense problemes addicionals.
+Un pas important ara que hem vist com són les variables pot ser fer un Anàlisi de Components Principals (PCA)). Com que tenim els NAs eliminats i les dades normalitzades, podem fer-lo sense problemes addicionals. Reduim la PCA a 5 components ja que sinó en fa 39 i el resultat s'allarga molt
 
 ```{r}
-PCAseMA <- prcomp(assay(seMAnormalized), scale. = TRUE)
+PCAseMA <- prcomp(assay(seMAnormalized), scale. = TRUE, rank. = 5)
 PCAseMA
 summary(PCAseMA)
 ```
 
-L'anàlisi no és molt concloent. Per obtenir un 70% de la variancia ens calen 5 components, el que és molt. Entenc que hi ha massa variables en joc i segurament caldria reduir abans d'alguna altra manera. Segurament hi ha explicacions biològiques que estaria bé aplicar, però a mi se m'escapen ja que no comprenc totes les variables.
+L'anàlisi no és molt concloent. Per obtenir un 70% de la variancia ens calen 5 components, el que és molt. Entenc que hi ha massa variables en joc i segurament caldria reduir abans d'alguna altra manera. Segurament hi ha explicacions biològiques que estaria bé aplicar, però a mi se m'escapen ja que no comprenc totes les variable i per tant, acoto aquí. 
 
+Tot i això, per veure com evoluciona l'explicació de la variança faig un gràfic de barres amb una nova PCA que porta tots els components 
+
+```{r}
+PCAseMA <- prcomp(assay(seMAnormalized), scale. = TRUE)
+barplot(summary(PCAseMA)$importance[2,],ylim=c(0,0.6))
+title(main="Proportion of variation",line=1)
+```
+S'parecia força clar com la primera aporta força i les següents van afegint poc. Tot i això, podriem dir que fins a la cinquena sembla interessant agafarles.
+
+Grafiquem ara les primeres components. De moment, dues
 
 ```{r}
 # carreguem les dades pel gràfic
@@ -235,17 +245,30 @@ names <- rownames(PCAseMA$x)
 text(PCAseMA$x[,1],PCAseMA$x[,2],names, pos=3, cex=.6)
 ```
 
-Lo unic destacable que s'aprecia és que la mostra 37 està a molta distància de la resta
+Lo unic destacable que s'aprecia és que la mostra 37 està a molta distància de la resta. Mirem en 3 components per veure si es veu alguna cosa més
 
 ```{r}
-library(plotly)
-fig <- plot_ly(as.data.frame(assay(seMAnormalized)), 
-               x = ~PCAseMA$x[,1], y = ~PCAseMA$x[,2], z = ~PCAseMA$x[,3]) %>%
-  add_markers(marker = list(size = 3)) %>%
-  layout(scene = list(xaxis = list(title = "PC1"),
-                      yaxis = list(title = "PC2"),
-                      zaxis = list(title = "PC3")))
-fig
+library(scatterplot3d)
+scatterplot3d(PCAseMA$x[,1], PCAseMA$x[,2], PCAseMA$x[,3],
+              xlab="PC1", ylab="PC2", zlab="PC3")
+              #color = ifelse(crabs$sp == "O", "green", "orange"),
+              #pch = ifelse(crabs$sex == "F", 3, 21))
+
+```
+
+Aqui ja hi ha 3 punts. El primer de dalt a l'esquerra és el mateix que hem vist en 2 dimensions, mentre que els altres dos no està tant clar. NOTA. Mirar de posar els noms 
+
+Amb plotly ho podem veure més facil al rotar el gràfic. El possem per fer el html, però no per fer el pdf, ja que no funciona amb el latex. 
+
+```{r}
+#library(plotly)
+#fig <- plot_ly(as.data.frame(assay(seMAnormalized)), 
+#               x = ~PCAseMA$x[,1], y = ~PCAseMA$x[,2], z = ~PCAseMA$x[,3]) %>%
+#  add_markers(marker = list(size = 3)) %>%
+#  layout(scene = list(xaxis = list(title = "PC1"),
+#                      yaxis = list(title = "PC2"),
+#                      zaxis = list(title = "PC3")))
+#fig
 ```
 
 Ara ja són 3 els casos que se separen força de la resta
