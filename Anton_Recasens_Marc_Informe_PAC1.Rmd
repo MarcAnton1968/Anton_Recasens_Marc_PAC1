@@ -3,8 +3,8 @@ title: "Anton_Recasens_Marc_Informe_PAC1_MO-157"
 author: "Marc Anton"
 date: "`r Sys.Date()`"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -87,7 +87,6 @@ seMAimputed <- seMAclean %>%
 # Normalitzem les dades i grafiquem el resultat de la normalització
 seMAnormalized <- seMAimputed %>% 
   PomaNorm(method = "auto_scaling")
-PomaDensity(seMAnormalized, x = "features")
 ```
 
 
@@ -98,10 +97,57 @@ Un cop pre-procesades les dades s'han realitzat les següents anàlisi:
 
 # Resultats
 
-Possarem els dos anàlisi
+Els resultats es mostren de manera separada pels 3 passos que hem realitzat:
+
+## Pre-processat de les dades
+
+El resultat del pre-processat de les dades es pot apreciar tant en un gràfic de les funcions de densitat de les variables on s'aprecia que, tot i que hi ha alguna variable amb cues molt llargues, en general, totes es comporten amb distribucions força aproximades a la normal. 
+
+```{r}
+PomaDensity(seMAnormalized, x = "features")
+```
+
+## Reducció de les dimensions
+
+Tal i com ja s'ha comentat, la reducció de les dimensions s'ha fet amb una anàlisi de components principals. El resultat complet de la PCA és molt extens degut a la grandaria de la matriu que s'ha utilitzat pel que, ensenyem aquí el resultat corresponent a les 5 primeres components que explica bastant be el que es pot deduir en base a les dades disponibles:
+
+```{r}
+PCAseMA <- prcomp(assay(seMAnormalized), scale. = TRUE, rank. = 5)
+summary(PCAseMA)
+```
+
+Es pot apreciar en aquest cas que l'anàlisi no és molt concloent, ja que per a explicar un un 70% de la variabilitat de les nostren dades ens calen com a mínim 5 components. Si volguessim arribar a un 85% ens caldrien 12 components i a un 95%, ens en caldrien 17. Pel que fa als coeficients del model de cada component, com es pot apreciar en els resultats de l'execució completa de l'exercici (Anton_Recasens_Marc_PAC1.Rmd) no hi ha cap variable que destaqui de manera particular.
+
+Si mirenm, però, als gràfics de les 3 primeres components, si que veiem uns casos d'estudi que s'allunyen força de la resta, en concret el 37, el....
+
+```{r}
+library(scatterplot3d)
+scatterplot3d(PCAseMA$x[,1], PCAseMA$x[,2], PCAseMA$x[,3],
+              xlab="PC1", ylab="PC2", zlab="PC3")
+              #color = ifelse(crabs$sp == "O", "green", "orange"),
+              #pch = ifelse(crabs$sex == "F", 3, 21))
+```
+
+## Cerca de patrons
+
+Pel que fa a l'anàlisi de cerca de patrons, el mapa de calor de la matriu de correlacions apunta a una baixa correlació general entre les variables, tot i que algunes semblen agrupar-se de manera clara com es pot veure a l'extrem inferior esquerra i al superior dret. Aquesta correlació es confirma amb els dendrogrames que apunten a dos grans grups de variables.
+
+```{r}
+cor_matrix <- cor(na.omit(assay(seMAnormalized)))
+heatmap(cor_matrix)
+```
+
+Finalment, l'anàlisi de distàncies ens mostra, novemant algunes mostres que es distancien força de la resta i fins a 3 grups de variables que podrien respondre a patrons dins de proximitat pel que fa a la seva resposta conjunta al procés estudiat
+
+```{r}
+dist_matrix <- t(assay(seMAnormalized))
+heatmap(dist_matrix, col=heat.colors(16))
+```
+
 
 # Discussió
 
+Caldria veure l'article original per si podem treure alguna conclusió.
 Apuntarem les limitacions que ens hem trobat en cada fase (pre-proces, PCA i heatmaps)
 
 
