@@ -1,0 +1,115 @@
+---
+title: "Anton_Recasens_Marc_Informe_PAC1_MO-157"
+author: "Marc Anton"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Resum
+
+
+
+# Objectius
+
+Els objectius de la primer prova d'avacluació continua és planificar i executar una versió simplificada del procés d'anàlisi de dades òmiques, alhora que practicar algunes de les eines i mètodes que s'han treballat durant el primer repte. 
+
+De manera més concreta, l'objectiu ha estar generar un objecte SummarizedExperminent de Bioconductor, explorar-ne les seves possibilitats a l'hora de tractar les dades i seguir els 3 passos bàsics del procès d'anàlisi de dades òmiques que són:
+
+1. Una anàlisi exploratoia.
+2. Una reducció de variables.
+3. Una cerca de patrons o classes.
+
+# Mètodes
+
+Per afrontar els objectius proposats, s'han utilitzat els fitxers dels exemples de mostra,que es poden veure clicant **[aquí](https://github.com/nutrimetabolomics/metaboData/tree/main/Datasets/2018-MetabotypingPaper)**. 
+
+Aquest exemple conté dos arxius: 1) DataInfo_S013 que conté la descripció de tots els camps que porta 2) DataValues_S013 on hi ha els valors de 694 varibles corresponents a 39 mostres. 
+Aquests dos fitxers, s'han incorporat un objecte SummarizedExperiment de Bioconductor. SummarizedExperiment permet dessar els resulltats d'un experiment tant pel que fa a les metadades de l'experiment en sí com dels casos d'estudi, junt amb les dades obtingudes per les variables obtingudes. És un objecte molt similar a ExpressionSet, però se'n diferencia de maner principal perquè pot contenir més d'un conjunt de dades sobre els mateixos casos, de manera que es poden obtenir diversos experiments fets amb els mateixos subjectes d'estudi. Com en ExpressionSet, l'empaquetament que porta permet tractar les dades de manera molt comode al tenir en un mateix objecte i clarament referenciat i indexat les metadades i les dades, de manera que si s'elimina o s'afegeix un cas, es tracta tot de maenera conjunta.
+
+En el nostre cas, hem generat el SummarizedExperiment considerant que el paquet inicial de dades contenia unes primres 9 variables relatius al subjecte d'estudi (o pacient) que són:
+1. Un codi de pacient 
+2. La cirugia a la que va ser sotmés el pacient
+3. L'edat i el gènere
+4. Un grup de tractament
+5. 4 tractaments que venen amb 0 i 1
+A continuació hi 686 variables de metabolits analitzats en els diferents pacients. 
+
+Per tant, el SummarizedExperminent ha tingut en compte això i s'ha generat de la següent manera:
+
+```{r}
+# Primer carreguem la llibreria per poder tractar el SummarizedExperiment
+library(SummarizedExperiment)
+
+# A continuació carreguem les dades
+DataInfo_S013 <- read.csv("DataInfo_S013.csv", sep = ",")
+DataValues_S013 <- read.csv("DataValues_S013.csv", sep = ",")
+
+# Després generem les dades de pacients i de metabolits i la llista de rownames que volem tal i com hem indicat al text
+pacients <- DataValues_S013[,2:10]
+metabolits <- DataValues_S013[,11:696]
+colNames <- DataInfo_S013[10:695,]
+# Ara ja podem carregar el SummarizedExperiment
+seMA <- SummarizedExperiment(assays = list(counts = as.matrix(metabolits)),
+                             colData = colNames,
+                             rowData = pacients)
+seMA
+```
+
+Ara be, aquest primer SummarizedExperiment contenia un alt nombre de valors no obtinguts (NAs) i, fins i tot, una columna amb tots els valors desconeguts. A més, el rang dels valors és molt variable, el que dificulta les anàlisi posterior. Per tant, s'ha procedit a: 
+
+1. Eliminar la columna que contenia només NAs
+2. Imputar els valors dels NAs de la resta de columnes
+3. Normalitzar les dades
+
+Després d'una anàlisi previa de les dades, s'ha optat per utilitzar les funcions del paquet POMA tant per la imputació com per la normalització. Per a la imputació, s'ha fet servir la funció *PomaImpute* i s'ha utilitzat el *mètode de veïns propers (knn)* que es pot considerat la millor aproximació. Per a la normalització s'ha utilitzat la funció PomaNormalize() amb un mètode d'escalat *auto_scaling* que és el que ha proporcionat una major normalizació gràfica de les dades. S'han rebutjat els logaritmes perquè amb les dades que tenim ens generen NAs, el mix_max perquè genera molta variabilitat en les dades en el nostre cas i el box_cox perquè no ha funcionat amb la matriu que tenim.
+
+En resum, el pre-processat ha estat:
+
+```{r}
+# Carreguem les llibreries
+library(POMA)
+library(ggtext)
+library(magrittr)
+
+# Eliminem la columna amb només NAs
+seMAclean <- seMA[,-248]
+
+# Imputem els NAs en les columnes restants
+seMAimputed <- seMAclean %>%
+  PomaImpute(method = "knn", zeros_as_na = FALSE, remove_na = FALSE, cutoff = 20)
+
+# Normalitzem les dades i grafiquem el resultat de la normalització
+seMAnormalized <- seMAimputed %>% 
+  PomaNorm(method = "auto_scaling")
+PomaDensity(seMAnormalized, x = "features")
+```
+
+
+Un cop pre-procesades les dades s'han realitzat les següents anàlisi:
+
+1. Una reducció de dimensions mitjançant un anàlisi de components principals
+2. Una cerca de patrons amb dos mapes de calor procedents de: 1) la matriu de correlacions i 2) un anàlisi de distàncies.
+
+# Resultats
+
+Possarem els dos anàlisi
+
+# Discussió
+
+Apuntarem les limitacions que ens hem trobat en cada fase (pre-proces, PCA i heatmaps)
+
+
+# Conclussions
+
+Que bo que és bioconductor i com facilita SummarizedExperiment el tractament de les dades
+
+# Referències
+
+El present informe presenta un resum de tot el procès d'anàlisi en el qual s'han eliminat totes les execucions de R que allarguen en excès la sortida en pdf. El procés original degudament documentat es pot consultar al següent repositori github repositori github, cliqueu **[aquí](https://github.com/MarcAnton1968/Anton_Recasens_Marc_PAC1/tree/master)**
+on a més del procés es troba un arxiu en html i en pdf de la solució de la PAC, així com tots els fitxers addicionals, incloent el .rda amb el SummarizedExperiment
