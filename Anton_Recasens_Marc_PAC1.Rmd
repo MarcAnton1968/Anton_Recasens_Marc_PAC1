@@ -17,7 +17,7 @@ Aquest arxiu conté les sol·lucions analítiques als problemes plantejats en la
 
 # 2. Carrega de dades
 
-Abans que res, carreguem les dades al nostre entorn de treball. Treballarem amb un dels exemples de mostra, veure **[aquí](https://github.com/nutrimetabolomics/metaboData/tree/main/Datasets/2018-MetabotypingPaper)**. Aquest exemple porta dos arxius, DataInfo_S013 i DataValues_S013. Carreguem els dos fitxers:
+Abans que res, carreguem les dades al nostre entorn de treball. Treballarem amb un dels exemples de mostra, veure **[aquí](assa)**. Aquest exemple porta dos arxius, DataInfo_S013 i DataValues_S013. Carreguem els dos fitxers:
 
 ```{r}
 DataInfo_S013 <- read.csv("DataInfo_S013.csv", sep = ",")
@@ -86,7 +86,7 @@ pacients <- DataValues_S013[,2:10]
 metabolits <- DataValues_S013[,11:696]
 colNames <- DataInfo_S013[10:695,]
 # Ara ja podem carregar el SummarizedExperiment
-seMA <- SummarizedExperiment(assays = list(counts = as.matrix(metabolits)),
+seMA <- SummarizedExperiment(assays = list(counts = as.matrix(metabolits)),       
                              colData = colNames,
                              rowData = pacients)
 seMA
@@ -128,7 +128,7 @@ Amb el que hem pogut veure fins aquó de les dades que tenim és que ens calen d
 1. Imputar els missing values 
 2. Normalitzar les dades
 
-Això ho podem fer amb POMA que al mateix temps ens permet fer algun boxplot
+Això ho podem fer amb POMA
 
 ```{r}
 # primer instal·lem el paquet i les llibreries
@@ -219,59 +219,82 @@ L'anàlisi no és molt concloent. Per obtenir un 70% de la variancia ens calen 5
 Tot i això, per veure com evoluciona l'explicació de la variança faig un gràfic de barres amb una nova PCA que porta tots els components 
 
 ```{r}
-PCAseMA <- prcomp(assay(seMAnormalized), scale. = TRUE)
 barplot(summary(PCAseMA)$importance[2,],ylim=c(0,0.6))
 title(main="Proportion of variation",line=1)
 ```
 S'parecia força clar com la primera aporta força i les següents van afegint poc. Tot i això, podriem dir que fins a la cinquena sembla interessant agafarles.
 
-Grafiquem ara les primeres components. De moment, dues
+Grafiquem ara les primeres components i ho fem en relació al tipus de cirugia que és el que cerca l'article original. De moment, dues
 
 ```{r}
 # carreguem les dades pel gràfic
+cirugia <- as.factor(rowData(seMA)$SURGERY)
+cirugian <- as.numeric(cirugia)
+# Amb això hem passat les dades de cirugia amb 1: by pass i 2: tubular
 loads <- round(PCAseMA$sdev^2/sum(PCAseMA$sdev^2)*100,1)
-groupColors <- c(rep("red", 4), rep("blue", 4))
 xlab <- c(paste("PC1",loads[1],"%"))
 ylab <- c(paste("PC2",loads[2],"%"))
 # grafiquem
 plot(PCAseMA$x[,1:2],
      xlab=xlab,
      ylab=ylab, 
-     pch = c(3,21),
-     col=c("blue","red"), 
+     pch = c(3,21)[cirugia],
+     col=c("blue","red")[cirugia], 
      main ="Principal components (PCA)",
-     ylim=c(-20,30))
+     ylim=c(-20,20),
+     xlim=c(-20,30))
 names <- rownames(PCAseMA$x)
 text(PCAseMA$x[,1],PCAseMA$x[,2],names, pos=3, cex=.6)
+abline(h=0,v=0,lty=4,col="gray")
+legend("topright",
+       pch=c(3,21),
+       col=c("blue","red"),
+       cex=0.8,
+       legend=c("bypass","tubular"))
+
 ```
 
-Lo unic destacable que s'aprecia és que la mostra 37 està a molta distància de la resta. Mirem en 3 components per veure si es veu alguna cosa més
+Sembla que les dues components ens separen els dos tipus de cirugia, el que implicaria una resposta diferent dels metabolits a la cirugia. Provem si amb 3 dimensions millora
 
 ```{r}
+gr3Ddata <- as.data.frame(PCAseMA$x)
+gr3Ddata$cirugia <- cirugian
 library(scatterplot3d)
-scatterplot3d(PCAseMA$x[,1], PCAseMA$x[,2], PCAseMA$x[,3],
-              xlab="PC1", ylab="PC2", zlab="PC3")
-              #color = ifelse(crabs$sp == "O", "green", "orange"),
-              #pch = ifelse(crabs$sex == "F", 3, 21))
+# scatterplot3d(PCAseMA$x[,1], PCAseMA$x[,2], PCAseMA$x[,3],
+scatterplot3d(gr3Ddata[,1], gr3Ddata[,2], gr3Ddata[,3],
+              xlab="PC1", ylab="PC2", zlab="PC3",
+              color = ifelse(gr3Ddata$cirugia == "1", "green", "orange"),
+              pch = ifelse(gr3Ddata$cirugia == "1", 3, 21))
+legend("topright",
+       pch=c(3,21),
+       col=c("green","orange"),
+       cex=0.8,
+       legend=c("bypass","tubular"))
 
 ```
 
-Aqui ja hi ha 3 punts. El primer de dalt a l'esquerra és el mateix que hem vist en 2 dimensions, mentre que els altres dos no està tant clar. NOTA. Mirar de posar els noms 
+Sembla que en 3 dimensions encara es veu més l'efecte de la cirugia
 
 Amb plotly ho podem veure més facil al rotar el gràfic. El possem per fer el html, però no per fer el pdf, ja que no funciona amb el latex. 
 
 ```{r}
 #library(plotly)
-#fig <- plot_ly(as.data.frame(assay(seMAnormalized)), 
-#               x = ~PCAseMA$x[,1], y = ~PCAseMA$x[,2], z = ~PCAseMA$x[,3]) %>%
-#  add_markers(marker = list(size = 3)) %>%
-#  layout(scene = list(xaxis = list(title = "PC1"),
-#                      yaxis = list(title = "PC2"),
-#                      zaxis = list(title = "PC3")))
+#fig <- plot_ly(gr3Ddata, 
+#               x = ~gr3Ddata[,1], y = ~gr3Ddata[,2], z = ~gr3Ddata[,3],
+#               color = ~cirugia, 
+#               type = 'scatter3d', 
+#               mode = 'markers', 
+#               marker = list(size = 5))
+
+#fig <- fig %>%
+#  layout(title = 'PCA en 3D',
+#         scene = list(
+#           xaxis = list(title = 'PC1'),
+#           yaxis = list(title = 'PC2'),
+#           zaxis = list(title = 'PC3')
+#         ))
 #fig
 ```
-
-Ara ja són 3 els casos que se separen força de la resta
 
 ## 7. Cerca de patrons
 
@@ -292,5 +315,4 @@ dist_matrix <- t(assay(seMAnormalized))
 heatmap(dist_matrix, col=heat.colors(16))
 ```
 
-Hi ha tantes mostres i variables que  no es poden veure be totes les relacions, però sembla que hi ha un patró clar de proximitat en les primeres variables del gràfic i algunes que estan a molta distància cap a baix. Pel que fa a les mostres, la 37 es mostra clarament diferent a la resta com ja s'havia vist a la PCA
-
+Hi ha tantes mostres i variables que  no es poden veure be totes les relacions, però sembla que hi ha un patró clar de proximitat en les primeres variables del gràfic i algunes que estan a molta distància cap a baix. 

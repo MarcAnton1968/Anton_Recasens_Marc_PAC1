@@ -3,8 +3,8 @@ title: "Anton_Recasens_Marc_Informe_PAC1_MO-157"
 author: "Marc Anton"
 date: "`r Sys.Date()`"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -29,7 +29,7 @@ De manera més concreta, l'objectiu ha estar generar un objecte SummarizedExperm
 
 Per afrontar els objectius proposats, s'han utilitzat els fitxers dels exemples de mostra,que es poden veure clicant **[aquí](https://github.com/nutrimetabolomics/metaboData/tree/main/Datasets/2018-MetabotypingPaper)**. 
 
-Aquest exemple conté dos arxius: 1) DataInfo_S013 que conté la descripció de tots els camps que porta 2) DataValues_S013 on hi ha els valors de 694 varibles corresponents a 39 mostres. 
+Aquest exemple conté les dades de l'anàlisi d'un paquet important de metabolits després de practicar dos tipus de cirugia en pacients amb obsitat morbida. Les dades estan estructurades en dos arxius: 1) DataInfo_S013 que conté la descripció de tots els camps que porta 2) DataValues_S013 on hi ha els valors de 694 varibles corresponents a 39 mostres. 
 Aquests dos fitxers, s'han incorporat un objecte SummarizedExperiment de Bioconductor. SummarizedExperiment permet dessar els resulltats d'un experiment tant pel que fa a les metadades de l'experiment en sí com dels casos d'estudi, junt amb les dades obtingudes per les variables obtingudes. És un objecte molt similar a ExpressionSet, però se'n diferencia de maner principal perquè pot contenir més d'un conjunt de dades sobre els mateixos casos, de manera que es poden obtenir diversos experiments fets amb els mateixos subjectes d'estudi. Com en ExpressionSet, l'empaquetament que porta permet tractar les dades de manera molt comode al tenir en un mateix objecte i clarament referenciat i indexat les metadades i les dades, de manera que si s'elimina o s'afegeix un cas, es tracta tot de maenera conjunta.
 
 En el nostre cas, hem generat el SummarizedExperiment considerant que el paquet inicial de dades contenia unes primres 9 variables relatius al subjecte d'estudi (o pacient) que són:
@@ -116,16 +116,28 @@ PCAseMA <- prcomp(assay(seMAnormalized), scale. = TRUE, rank. = 5)
 summary(PCAseMA)
 ```
 
-Es pot apreciar en aquest cas que l'anàlisi no és molt concloent, ja que per a explicar un un 70% de la variabilitat de les nostren dades ens calen com a mínim 5 components. Si volguessim arribar a un 85% ens caldrien 12 components i a un 95%, ens en caldrien 17. Pel que fa als coeficients del model de cada component, com es pot apreciar en els resultats de l'execució completa de l'exercici (Anton_Recasens_Marc_PAC1.Rmd) no hi ha cap variable que destaqui de manera particular.
+Es pot apreciar en aquest cas que l'anàlisi no és molt concloent, ja que per a explicar un un 70% de la variabilitat de les nostren dades ens calen com a mínim 5 components. Si volguessim arribar a un 85% ens caldrien 12 components i a un 95%, ens en caldrien 17. 
 
-Si mirenm, però, als gràfics de les 3 primeres components, si que veiem uns casos d'estudi que s'allunyen força de la resta, en concret el 37, el....
+Pel que fa als coeficients del model de cada component, com es pot apreciar en els resultats de l'execució completa de l'exercici (Anton_Recasens_Marc_PAC1.Rmd) no hi ha cap variable que destaqui de manera particular.
+
+D'altra bandam, el que si ens mostra la PCA és que els dos tipus de cirugia que es van aplicar sobre els pacients es separen en el que fa a la resposta dels metabolits. Aixó s'aprecia be en el gràfic de les 3 primeres components.
 
 ```{r}
+cirugia <- as.factor(rowData(seMA)$SURGERY)
+cirugian <- as.numeric(cirugia)
+gr3Ddata <- as.data.frame(PCAseMA$x)
+gr3Ddata$cirugia <- cirugian
 library(scatterplot3d)
-scatterplot3d(PCAseMA$x[,1], PCAseMA$x[,2], PCAseMA$x[,3],
-              xlab="PC1", ylab="PC2", zlab="PC3")
-              #color = ifelse(crabs$sp == "O", "green", "orange"),
-              #pch = ifelse(crabs$sex == "F", 3, 21))
+# scatterplot3d(PCAseMA$x[,1], PCAseMA$x[,2], PCAseMA$x[,3],
+scatterplot3d(gr3Ddata[,1], gr3Ddata[,2], gr3Ddata[,3],
+              xlab="PC1", ylab="PC2", zlab="PC3",
+              color = ifelse(gr3Ddata$cirugia == "1", "green", "orange"),
+              pch = ifelse(gr3Ddata$cirugia == "1", 3, 21))
+legend("topright",
+       pch=c(3,21),
+       col=c("green","orange"),
+       cex=0.8,
+       legend=c("bypass","tubular"))
 ```
 
 ## Cerca de patrons
@@ -149,7 +161,6 @@ heatmap(dist_matrix, col=heat.colors(16))
 
 Caldria veure l'article original per si podem treure alguna conclusió.
 Apuntarem les limitacions que ens hem trobat en cada fase (pre-proces, PCA i heatmaps)
-
 
 # Conclussions
 
