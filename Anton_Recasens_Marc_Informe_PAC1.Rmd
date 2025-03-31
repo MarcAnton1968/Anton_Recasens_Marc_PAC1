@@ -3,8 +3,11 @@ title: "Anton_Recasens_Marc_Informe_PAC1_MO-157"
 author: "Marc Anton"
 date: "`r Sys.Date()`"
 output:
-  pdf_document: default
-  html_document: default
+  pdf_document:
+    toc: true
+    toc_depth: 2
+header-includes:
+   - \renewcommand{\contentsname}{Index}
 ---
 
 ```{r setup, include=FALSE}
