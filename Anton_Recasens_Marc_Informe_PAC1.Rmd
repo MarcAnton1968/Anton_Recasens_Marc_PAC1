@@ -6,8 +6,7 @@ output:
   pdf_document:
     toc: true
     toc_depth: 2
-header-includes:
-   - \renewcommand{\contentsname}{Index}
+header-includes: \renewcommand{\contentsname}{Index}
 ---
 
 ```{r setup, include=FALSE}
@@ -16,34 +15,35 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
 # Resum
 
-
+El present treball és la resposta a la primera prova d'avaluació continua de l'assignatura d'anàlisi òmiques. En l'informe es detalla el conjunt de dades a tractar i el procediment d'anàlisi que s'ha realitzat. En concret s'han treballat unes dades metabòliques d'un experiment realitzat sobre 39 persones sotmeses a dos tipus de cirurgia per tractar l'obesitat mòrbida. L'anàlisi realitzat ha constat de: 1) un pre-processat de les dades per imputar els valors absents i normalitzar les variables, un anàlisi de components principals i uns anàlisi de les matrius de correlacions i de les distàncies entre variables. Per a fer totes les anàlisi s'ha utilitzat un objecte *SummarizedExperiment* que empaqueta de manera correcte les dades. La conclusió ha estat que aquest objecte permet una anàlisi còmode de paquets de dades amb pocs casos i moltes variables com són les dades òmiques.
 
 # Objectius
 
-Els objectius de la primer prova d'avacluació continua és planificar i executar una versió simplificada del procés d'anàlisi de dades òmiques, alhora que practicar algunes de les eines i mètodes que s'han treballat durant el primer repte. 
+Els objectius de la primera prova d'avaluació continua és planificar i executar una versió simplificada del procés d'anàlisi de dades òmiques, alhora que practicar algunes de les eines i mètodes que s'han treballat durant el primer repte. 
 
-De manera més concreta, l'objectiu ha estar generar un objecte SummarizedExperminent de Bioconductor, explorar-ne les seves possibilitats a l'hora de tractar les dades i seguir els 3 passos bàsics del procès d'anàlisi de dades òmiques que són:
+De manera més concreta, l'objectiu ha estar generar un objecte *SummarizedExperiment* de *Bioconductor*, explorar-ne les seves possibilitats a l'hora de tractar les dades i seguir els 3 passos bàsics del procés d'anàlisi de dades òmiques que són:
 
-1. Una anàlisi exploratoia.
-2. Una reducció de variables.
+1. Una anàlisi exploratòria de les dades.
+2. Una reducció de variable.
 3. Una cerca de patrons o classes.
 
 # Mètodes
 
-Per afrontar els objectius proposats, s'han utilitzat els fitxers dels exemples de mostra,que es poden veure clicant **[aquí](https://github.com/nutrimetabolomics/metaboData/tree/main/Datasets/2018-MetabotypingPaper)**. 
+Per afrontar els objectius proposats s'han utilitzat els fitxers dels exemples de mostra que es poden veure clicant **[aquí](https://github.com/nutrimetabolomics/metaboData/tree/main/Datasets/2018-MetabotypingPaper)**. 
 
-Aquest exemple conté les dades de l'anàlisi d'un paquet important de metabolits després de practicar dos tipus de cirugia en pacients amb obsitat morbida. Les dades estan estructurades en dos arxius: 1) DataInfo_S013 que conté la descripció de tots els camps que porta 2) DataValues_S013 on hi ha els valors de 694 varibles corresponents a 39 mostres. 
-Aquests dos fitxers, s'han incorporat un objecte SummarizedExperiment de Bioconductor. SummarizedExperiment permet dessar els resulltats d'un experiment tant pel que fa a les metadades de l'experiment en sí com dels casos d'estudi, junt amb les dades obtingudes per les variables obtingudes. És un objecte molt similar a ExpressionSet, però se'n diferencia de maner principal perquè pot contenir més d'un conjunt de dades sobre els mateixos casos, de manera que es poden obtenir diversos experiments fets amb els mateixos subjectes d'estudi. Com en ExpressionSet, l'empaquetament que porta permet tractar les dades de manera molt comode al tenir en un mateix objecte i clarament referenciat i indexat les metadades i les dades, de manera que si s'elimina o s'afegeix un cas, es tracta tot de maenera conjunta.
+Aquest exemple conté les dades de l'anàlisi d'un paquet important de metabòlits després de practicar dos tipus de cirurgia en pacients amb obesitat mòrbida. Les dades estan estructurades en dos arxius: 1) **DataInfo_S013** que conté la descripció de tots els camps que porta 2) **DataValues_S013** on hi ha els valors de 694 variables corresponents a 39 mostres. 
 
-En el nostre cas, hem generat el SummarizedExperiment considerant que el paquet inicial de dades contenia unes primres 9 variables relatius al subjecte d'estudi (o pacient) que són:
+Aquests dos fitxers, s'han incorporat un objecte *SummarizedExperiment* de *Bioconductor*. *SummarizedExperiment* permet desar els resultats d'un experiment tant pel que fa a les metadades de l'experiment en sí com dels casos d'estudi, junt amb les dades obtingudes per les variables obtingudes. És un objecte molt similar a *ExpressionSet*, però se'n diferencia de manera principal perquè pot contenir més d'un conjunt de dades sobre els mateixos casos, de manera que es poden obtenir diversos experiments fets amb els mateixos subjectes d'estudi. Aquests experiments es guarden igual que en *ExpressionSet* com *assay*. Així mateix, com en *ExpressionSet*, l'empaquetament que porta permet tractar les dades de manera molt còmode al tenir en un mateix objecte i clarament referenciat i indexat les metadades i les dades, de manera que si s'elimina o s'afegeix un cas, es tracta tot de manera conjunta.
+
+En el nostre cas, hem generat el *SummarizedExperiment* considerant que el paquet inicial de dades contenia unes primeres 9 variables relatius al subjecte d'estudi (o pacient) que són:
 1. Un codi de pacient 
-2. La cirugia a la que va ser sotmés el pacient
+2. La cirurgia a la que va ser sotmès el pacient
 3. L'edat i el gènere
 4. Un grup de tractament
 5. 4 tractaments que venen amb 0 i 1
-A continuació hi 686 variables de metabolits analitzats en els diferents pacients. 
+A continuació hi 686 variables de metabòlits analitzats en els diferents pacients. 
 
-Per tant, el SummarizedExperminent ha tingut en compte això i s'ha generat de la següent manera:
+Per tant, el *SummarizedExperiment* ha tingut en compte això i s'ha generat considerant que les dades del pacient són el *rowData*, és a dir el que identifica el cas d'estudi, les dades de metabòlits són l'experiment, és a dir l'*assay* i, òbviament, la informació sobre els camps és això i es desa com a *colData*. A continuació es mostra la càrrega:
 
 ```{r}
 # Primer carreguem la llibreria per poder tractar el SummarizedExperiment
@@ -64,15 +64,21 @@ seMA <- SummarizedExperiment(assays = list(counts = as.matrix(metabolits)),
 seMA
 ```
 
-Ara be, aquest primer SummarizedExperiment contenia un alt nombre de valors no obtinguts (NAs) i, fins i tot, una columna amb tots els valors desconeguts. A més, el rang dels valors és molt variable, el que dificulta les anàlisi posterior. Per tant, s'ha procedit a: 
+La primera exploració de les dades permet detectar que aquest primer *SummarizedExperiment* contenia un alt nombre de valors no calculats o no processats, és a dir NA i, fins i tot, una columna amb tots els valors desconeguts. 
+
+D'altra banda, el rang dels valors de cada metabòlit és molt variable, el que dificulta les anàlisi posterior. Per tant, les dades han estat sotmeses a un pre-processat que ha consistit en: 
 
 1. Eliminar la columna que contenia només NAs
 2. Imputar els valors dels NAs de la resta de columnes
 3. Normalitzar les dades
 
-Després d'una anàlisi previa de les dades, s'ha optat per utilitzar les funcions del paquet POMA tant per la imputació com per la normalització. Per a la imputació, s'ha fet servir la funció *PomaImpute* i s'ha utilitzat el *mètode de veïns propers (knn)* que es pot considerat la millor aproximació. Per a la normalització s'ha utilitzat la funció PomaNormalize() amb un mètode d'escalat *auto_scaling* que és el que ha proporcionat una major normalizació gràfica de les dades. S'han rebutjat els logaritmes perquè amb les dades que tenim ens generen NAs, el mix_max perquè genera molta variabilitat en les dades en el nostre cas i el box_cox perquè no ha funcionat amb la matriu que tenim.
+Aquest protocol s'ha implementat utilitzant les funcions del paquet POMA (Castellano *eta l.*, 2021) tant per la imputació com per la normalització. 
 
-En resum, el pre-processat ha estat:
+Per a la imputació, s'ha fet servir la funció *PomaImpute()* i s'ha utilitzat el *mètode de veïns propers (knn)* que es pot considerat la millor aproximació. 
+
+Per a la normalització s'ha utilitzat la funció *PomaNormalize()* amb un mètode d'escalat *auto_scaling* que és el que ha proporcionat una major normalització gràfica de les dades. Tot i que es van avaluar com a possibilitats, s'han rebutjat els logaritmes perquè amb les dades que tenim ens generen NAs, el mix_max perquè genera molta variabilitat en les dades en el nostre cas i el box_cox perquè no ha funcionat amb la matriu que tenim.
+
+En resum, el procés de pre-processat ha estat:
 
 ```{r}
 # Carreguem les llibreries
@@ -93,18 +99,18 @@ seMAnormalized <- seMAimputed %>%
 ```
 
 
-Un cop pre-procesades les dades s'han realitzat les següents anàlisi:
+Un cop pre-processades les dades s'han realitzat les següents anàlisi:
 
 1. Una reducció de dimensions mitjançant un anàlisi de components principals
 2. Una cerca de patrons amb dos mapes de calor procedents de: 1) la matriu de correlacions i 2) un anàlisi de distàncies.
 
 # Resultats
 
-Els resultats es mostren de manera separada pels 3 passos que hem realitzat:
+Els resultats es comenten a continuació de manera separada pels 3 passos que hem realitzat:
 
 ## Pre-processat de les dades
 
-El resultat del pre-processat de les dades es pot apreciar tant en un gràfic de les funcions de densitat de les variables on s'aprecia que, tot i que hi ha alguna variable amb cues molt llargues, en general, totes es comporten amb distribucions força aproximades a la normal. 
+El resultat del pre-processat de les dades ha estat una normalització de les variables que resulta útil pels posteriors anàlisi. En el gràfic que es genera a continuació, es pot apreciar com les funcions de densitat de les variables presenten distribucions centrades en els mateixos valor i força aproximades a la normal. 
 
 ```{r}
 PomaDensity(seMAnormalized, x = "features")
@@ -112,18 +118,18 @@ PomaDensity(seMAnormalized, x = "features")
 
 ## Reducció de les dimensions
 
-Tal i com ja s'ha comentat, la reducció de les dimensions s'ha fet amb una anàlisi de components principals. El resultat complet de la PCA és molt extens degut a la grandaria de la matriu que s'ha utilitzat pel que, ensenyem aquí el resultat corresponent a les 5 primeres components que explica bastant be el que es pot deduir en base a les dades disponibles:
+Tal i com ja s'ha comentat, la reducció de les dimensions s'ha fet amb una anàlisi de components principals. El resultat complet de la PCA és molt extens degut a la grandària de la matriu i es mostra en l'anàlisi de totes les dades que es troba referenciada al final de l'informe  (Anton_Recasens_Marc_PAC1.Rmd). En aquest informe es mostra el resultat corresponent a les 5 primeres components que explica bastant be el que es pot deduir en base a les dades disponibles:
 
 ```{r}
 PCAseMA <- prcomp(assay(seMAnormalized), scale. = TRUE, rank. = 5)
 summary(PCAseMA)
 ```
 
-Es pot apreciar en aquest cas que l'anàlisi no és molt concloent, ja que per a explicar un un 70% de la variabilitat de les nostren dades ens calen com a mínim 5 components. Si volguessim arribar a un 85% ens caldrien 12 components i a un 95%, ens en caldrien 17. 
+En aquest anàlisi, es pot apreciar que per a explicar un 70% de la variabilitat de les dades calen com a mínim 5 components. En els resultats globals es pot apreciar que per arribar a explicar un 85% de la variabilitat, calen 12 components i per a un 95%, 17. 
 
-Pel que fa als coeficients del model de cada component, com es pot apreciar en els resultats de l'execució completa de l'exercici (Anton_Recasens_Marc_PAC1.Rmd) no hi ha cap variable que destaqui de manera particular.
+Pel que fa als coeficients del model de cada component, com es pot apreciar en els resultats de l'execució completa de l'exercici no hi ha cap variable que destaqui de manera particular.
 
-D'altra bandam, el que si ens mostra la PCA és que els dos tipus de cirugia que es van aplicar sobre els pacients es separen en el que fa a la resposta dels metabolits. Aixó s'aprecia be en el gràfic de les 3 primeres components.
+D'altra banda, el que si ens mostra la PCA és que els dos tipus de cirurgia que es van aplicar sobre els pacients es separen en el que fa a la resposta dels metabòlits. Això s'aprecia be en el gràfic de les 3 primeres components.
 
 ```{r}
 cirugia <- as.factor(rowData(seMA)$SURGERY)
@@ -152,7 +158,7 @@ cor_matrix <- cor(na.omit(assay(seMAnormalized)))
 heatmap(cor_matrix)
 ```
 
-Finalment, l'anàlisi de distàncies ens mostra, novemant algunes mostres que es distancien força de la resta i fins a 3 grups de variables que podrien respondre a patrons dins de proximitat pel que fa a la seva resposta conjunta al procés estudiat
+Finalment, l'anàlisi de distàncies ens mostra algunes mostres que es distancien força de la resta i fins a 3 grups de variables que podrien respondre a patrons dins de proximitat pel que fa a la seva resposta conjunta al procés estudiat
 
 ```{r}
 dist_matrix <- t(assay(seMAnormalized))
@@ -162,14 +168,26 @@ heatmap(dist_matrix, col=heat.colors(16))
 
 # Discussió
 
-Caldria veure l'article original per si podem treure alguna conclusió.
-Apuntarem les limitacions que ens hem trobat en cada fase (pre-proces, PCA i heatmaps)
+Les associacions que hem pogut veure en la PCA i en les cerques de patrons semblen indicar que hi ha grups de metabòlits que responen de manera diferent a les cirurgies aplicades. Això pot implicar en la pràctica que, en funció dels resultats que es vulguin utilitzar s'hauria d'aplicar un tipus o un altre. Quins són els metabòlits afectats i a que responen requeriria d'anàlisi més complexes que no són l'objectiu del present treball i que requereixen uns coneixements, que en el meu cas, no tinc.
 
-# Conclussions
+Per tant, en el meu cas, passo a comentar apreciacions generals sobre els mètodes utilitzats. 
 
-Que bo que és bioconductor i com facilita SummarizedExperiment el tractament de les dades
+D'una banda, tot el procés permet apreciar els avantatges de tenir les dades empaquetades en un sol objecte com és el cas de *SummarizedExperiment*. Aquesta facilitat s'aprecia sobretot amb la facilitat d'imputar i normalitzar un paquet amb tantes variables com el que he utilitzat. Durant el pre-processat he tingut la sensació que la clau de tot el procediment utilitzat és la imputació i la normalització de les dades. L'aspecte més delicat i on veig la limitació més important al procediment és la gran quantitat de dades a imputar que impliquen ja que això m'ha portat a fer assumpcions sobre les dades que no es corresponen amb observacions. Potser hagués calgut una mica més d'aprofundiment i esbrinar quines variables presenten més quantitat de NAs i provar diversos models amb i sense aquestes variables i utilitzar estimadors d'ajust per escollir el millor model, tot i que crec que això queda fora dels límits d'aquest treball. Aquesta afinació del pre-processat, potser hauria permès trobar una anàlisi de components principals més explicativa que la que es presenta.
+
+Finalment, també cal destacar que el fet de no tenir un objectiu biològic clar a l'hora de tractar les dades no permet afinar més ja que, potser, algunes de les variables resulten innecessàries o redundants
+
+# Conclusions
+
+Com a conclusió enfocada a l'objectiu de poder-se familiaritzar amb el tractament de dades òmiques, crec que l'experiència amb *Bioconductor* i l'anàlisi multivariant posterior ha resultat extremadament positiva i que obre una finestra d'estudi molt amplia. En el meu entorn laboral més enfocat a dades de biodiversitat no hi veig molta connexió amb *Bioconductor*, però si que penso que bona part dels problemes estadístics i de tractament de les dades són molt similars i és positiu haver-s'hi d'enfrontar.
+
+Amb franquesa, no soc capaç de donar una resposta biològica a les anàlisi, però crec que el procediment és interessant i útil.
 
 # Referències
 
-El present informe presenta un resum de tot el procès d'anàlisi en el qual s'han eliminat totes les execucions de R que allarguen en excès la sortida en pdf. El procés original degudament documentat es pot consultar al següent repositori github repositori github, cliqueu **[aquí](https://github.com/MarcAnton1968/Anton_Recasens_Marc_PAC1/tree/master)**
+El present informe presenta un resum de tot el procés d'anàlisi en el qual s'han eliminat totes les execucions de R que allarguen en excés la sortida en pdf. El procés original degudament documentat es pot consultar al següent repositori github repositori github, cliqueu **[aquí](https://github.com/MarcAnton1968/Anton_Recasens_Marc_PAC1/tree/master)**
 on a més del procés es troba un arxiu en html i en pdf de la solució de la PAC, així com tots els fitxers addicionals, incloent el .rda amb el SummarizedExperiment
+
+Castellano-Escuder P, González-Domínguez R, Carmona-Pontaque F,
+  Andrés-Lacueva C, Sánchez-Pla A (2021) POMAShiny: A user-friendly web-based
+  workflow for metabolomics and proteomics data analysis. *PLOS Computational Biology*
+  17(7): e1009148. https://doi.org/10.1371/journal.pcbi.1009148

@@ -3,8 +3,12 @@ title: "Anàlisi de dades òmiques (M0-157). PAC1."
 author: "Marc Anton"
 date: "`r Sys.Date()`"
 output:
-  pdf_document: default
+  pdf_document:
+    toc: true
+    toc_depth: 2
   html_document: default
+header-includes:
+   - \renewcommand{\contentsname}{Index}
 ---
 
 ```{r setup, include=FALSE}
@@ -119,7 +123,16 @@ Fins ara hem vist que les nostres dades tenen NA, el que pot suposar un problema
 summary(assay(seMA)[,1:150])
 ```
 
-Veiem que la variabilitat en els rangs és molt elevada i, per tant, caldrà normalitzar les dades. Recordem també que tenim un nombre de NAs força elevat.
+Veiem que la variabilitat en els rangs és molt elevada i, per tant, caldrà normalitzar les dades. Recordem també que tenim un nombre de NAs força elevat el que implica fer alguna mena d'imputació per eliminar problemes computacionals. 
+
+Tot i això, abans de continuar, generaré el fitxer rdata amb seMA
+
+```{r}
+save(seMA, file = "AntonRecasensMarcSe.rdata")
+```
+
+
+
 
 ## 5.2. Preprocessat
 
@@ -275,26 +288,6 @@ legend("topright",
 
 Sembla que en 3 dimensions encara es veu més l'efecte de la cirugia
 
-Amb plotly ho podem veure més facil al rotar el gràfic. El possem per fer el html, però no per fer el pdf, ja que no funciona amb el latex. 
-
-```{r}
-#library(plotly)
-#fig <- plot_ly(gr3Ddata, 
-#               x = ~gr3Ddata[,1], y = ~gr3Ddata[,2], z = ~gr3Ddata[,3],
-#               color = ~cirugia, 
-#               type = 'scatter3d', 
-#               mode = 'markers', 
-#               marker = list(size = 5))
-
-#fig <- fig %>%
-#  layout(title = 'PCA en 3D',
-#         scene = list(
-#           xaxis = list(title = 'PC1'),
-#           yaxis = list(title = 'PC2'),
-#           zaxis = list(title = 'PC3')
-#         ))
-#fig
-```
 
 ## 7. Cerca de patrons
 
